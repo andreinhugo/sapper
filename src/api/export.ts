@@ -192,9 +192,9 @@ async function _export({
 			// parse link rel=preload headers and embed them in the HTML
 			let link = parseLinkHeader(response.headers.get('Link') || '');
 			link.refs.forEach((ref: Ref) => {
-				if (ref.rel === 'preload') {
+				if (ref.rel.includes('preload')) {
 					body = body.replace('</head>',
-						`<link rel="preload" as=${JSON.stringify(ref.as)} href=${JSON.stringify(ref.uri)}></head>`)
+						`<link rel="preload" as=${JSON.stringify(ref.as || "script")} href=${JSON.stringify(ref.uri)}></head>`)
 				}
 			});
 
