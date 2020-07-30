@@ -123,6 +123,12 @@ const reserved_words = new Set([
 	'yield',
 ]);
 
+function normalize_path(user_path) {
+	const p = path.normalize(user_path);
+	// normalize drive letter on Windows
+	return p.length ? p.charAt(0).toLowerCase() + p.slice(1) : '';
+}
+
 const { FORCE_COLOR, NODE_DISABLE_COLORS, TERM } = process.env;
 
 const $ = {
@@ -231,6 +237,7 @@ exports.elapsed = elapsed;
 exports.format_milliseconds = format_milliseconds;
 exports.kleur = kleur;
 exports.left_pad = left_pad;
+exports.normalize_path = normalize_path;
 exports.posixify = posixify;
 exports.repeat = repeat;
 exports.reserved_words = reserved_words;

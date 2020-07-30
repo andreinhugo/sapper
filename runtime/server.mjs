@@ -2274,42 +2274,54 @@ function get_page_handler(
 
 
 
+
+
+
+
+
  = get_build_info();
 
 		res.setHeader('Content-Type', 'text/html');
 		res.setHeader('Cache-Control', dev ? 'no-cache' : 'max-age=600');
 
 		// preload main.js and current route
-		// TODO detect other stuff we can preload? images, CSS, fonts?
-		let preloaded_chunks = Array.isArray(build_info.assets.main) ? build_info.assets.main : [build_info.assets.main];
+		// TODO detect other stuff we can preload like fonts?
+		let preload_files = Array.isArray(build_info.assets.main) ? build_info.assets.main : [build_info.assets.main];
 		if (!error && !is_service_worker_index) {
 			page.parts.forEach(part => {
 				if (!part) return;
 
 				// using concat because it could be a string or an array. thanks webpack!
-				preloaded_chunks = preloaded_chunks.concat(build_info.assets[part.name]);
+				preload_files = preload_files.concat(build_info.assets[part.name]);
 			});
 		}
 
+		let es6_preload = false;
 		if (build_info.bundler === 'rollup') {
-			// TODO add dependencies and CSS
-			const link = preloaded_chunks
-				.filter(file => file && !file.match(/\.map$/))
-				.map(file => `<${req.baseUrl}/client/${file}>;rel="modulepreload"`)
-				.join(', ');
 
-			res.setHeader('Link', link);
-		} else {
-			const link = preloaded_chunks
-				.filter(file => file && !file.match(/\.map$/))
-				.map((file) => {
-					const as = /\.css$/.test(file) ? 'style' : 'script';
-					return `<${req.baseUrl}/client/${file}>;rel="preload";as="${as}"`;
-				})
-				.join(', ');
+			es6_preload = true;
 
-			res.setHeader('Link', link);
+			const route = page.parts[page.parts.length - 1].file;
+
+			// JS
+			preload_files = preload_files.concat(build_info.dependencies[route]);
+
+			// CSS
+			preload_files = preload_files.concat(build_info.css.main);
+			preload_files = preload_files.concat(build_info.css.chunks[route]);
 		}
+
+		const link = preload_files
+			.filter((v, i, a) => a.indexOf(v) === i)        // remove any duplicates
+			.filter(file => file && !file.match(/\.map$/))  // exclude source maps
+			.map((file) => {
+				const as = /\.css$/.test(file) ? 'style' : 'script';
+				const rel = es6_preload && as === 'script' ? 'modulepreload' : 'preload';
+				return `<${req.baseUrl}/client/${file}>;rel="${rel}";as="${as}"`;
+			})
+			.join(', ');
+
+		res.setHeader('Link', link);
 
 		let session;
 		try {
@@ -2377,14 +2389,13 @@ function get_page_handler(
 		let params;
 
 		try {
-			const root_preloaded = manifest.root_preload
-				? manifest.root_preload.call(preload_context, {
+			const root_preload = manifest.root_comp.preload || (() => {});
+			const root_preloaded = root_preload.call(preload_context, {
 					host: req.headers.host,
 					path: req.path,
 					query: req.query,
 					params: {}
-				}, session)
-				: {};
+				}, session);
 
 			match = error ? null : page.pattern.exec(req.path);
 
@@ -2397,8 +2408,8 @@ function get_page_handler(
 					// the deepest level is used below, to initialise the store
 					params = part.params ? part.params(match) : {};
 
-					return part.preload
-						? part.preload.call(preload_context, {
+					return part.component.preload
+						? part.component.preload.call(preload_context, {
 							host: req.headers.host,
 							path: req.path,
 							query: req.query,
@@ -2480,7 +2491,7 @@ function get_page_handler(
 					if (!part) continue;
 
 					props[`level${l++}`] = {
-						component: part.component,
+						component: part.component.default,
 						props: preloaded[i + 1] || {},
 						segment: segments[i]
 					};
@@ -2740,8 +2751,14 @@ function serve({ prefix, pathname, cache_control }
 				res.setHeader('Cache-Control', cache_control);
 				res.end(data);
 			} catch (err) {
-				res.statusCode = 404;
-				res.end('not found');
+				if (err.code === 'ENOENT') {
+					next();
+				} else {
+					console.error(err);
+
+					res.statusCode = 500;
+					res.end('an error occurred while reading a static file from disk');
+				}
 			}
 		} else {
 			next();

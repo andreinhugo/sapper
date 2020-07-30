@@ -34,6 +34,7 @@ var webpack = {
 				path: `${__chunk_3.dest}/server`,
 				filename: '[name].js',
 				chunkFilename: '[hash]/[name].[id].js',
+				publicPath: `client/`,
 				libraryTarget: 'commonjs2'
 			};
 		}

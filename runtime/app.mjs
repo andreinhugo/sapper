@@ -2,7 +2,7 @@ import { getContext } from 'svelte';
 import { CONTEXT_KEY } from './internal/shared';
 import { writable } from 'svelte/store';
 import App from './internal/App.svelte';
-import { ignore, routes, root_preload, components, ErrorComponent } from './internal/manifest-client';
+import { ignore, routes, root_comp, components, ErrorComponent } from './internal/manifest-client';
 
 function goto(href, opts = { replaceState: false }) {
 	const target = select_target(new URL(href, document.baseURI));
@@ -342,6 +342,7 @@ async function hydrate_target(target)
 	};
 
 	if (!root_preloaded) {
+		const root_preload = root_comp.preload || (() => {});
 		root_preloaded = initial_data.preloaded[0] || root_preload.call(preload_context, {
 			host: page.host,
 			path: page.path,
