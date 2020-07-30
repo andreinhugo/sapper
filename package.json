@@ -68,6 +68,7 @@
     "pretest": "npm run build",
     "build": "rm -rf dist && rollup -c",
     "prepare": "cd ./node_modules/rollup-dependency-tree && npm install && npm run build",
+    "postinstall": "echo \"SAPPER\"",
     "dev": "rollup -cw",
     "prepublishOnly": "npm test"
   },
