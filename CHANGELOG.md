@@ -1,5 +1,18 @@
 # sapper changelog
 
+## Unreleased
+
+* 🎉 TypeScript support! 🎉
+
+Also:
+
+* Fix handling of routes beginning with /client/ ([#1142](https://github.com/sveltejs/sapper/issues/1142))
+* Fix path normalization of chunks on Windows ([#1256](https://github.com/sveltejs/sapper/issues/1256), [#1333](https://github.com/sveltejs/sapper/issues/1333))
+* Fix CSS splitting when using Rollup 2 ([#1306](https://github.com/sveltejs/sapper/pull/1306))
+* Set `publicPath` in webpack server config for benefit of `file-loader` ([#1342](https://github.com/sveltejs/sapper/pull/1342))
+* Detect presence of `preload` at runtime, so we don't need to worry about preprocessors and compiling components when doing so ([#1344](https://github.com/sveltejs/sapper/pull/1344))
+
+
 ## 0.27.16
 
 * Handle errors thrown from session seeding function ([#1273](https://github.com/sveltejs/sapper/issues/1273))
@@ -8,6 +21,7 @@
 ## 0.27.15
 
 * Allow `session` handler to return a Promise ([#740](https://github.com/sveltejs/sapper/issues/740))
+
 
 ## 0.27.14
 
